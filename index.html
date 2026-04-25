@@ -6,7 +6,6 @@
 <title>BRYPTO</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=Azeret+Mono:wght@400;700;900&family=Permanent+Marker&family=Rock+Salt&family=Chakra+Petch:wght@400;700&display=swap" rel="stylesheet">
-<script async defer src="https://js.whop.com/static/checkout/loader.js"></script>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -621,5 +620,8 @@ document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click'
 const sp=document.getElementById('sp');
 window.addEventListener('scroll',()=>{const h=document.documentElement;sp.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight))*100+'%';},{passive:true});
 </script>
+
+<!-- whop checkout loader: placed after embed divs so it finds them on first scan -->
+<script src="https://js.whop.com/static/checkout/loader.js"></script>
 </body>
 </html>
