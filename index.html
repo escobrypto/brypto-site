@@ -609,16 +609,19 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;background:rgba(6,6,6,.92);b
 </div>
 
 <script>
-// disclaimer popup
-function showDisclaimer(e){e.preventDefault();const m=document.getElementById('disc-modal');m.style.display='flex'}
-function hideDisclaimer(){document.getElementById('disc-modal').style.display='none'}
-document.getElementById('disc-modal').addEventListener('click',function(e){if(e.target===this)hideDisclaimer()});
+// disclaimer popup — exposed on window so inline onclick handlers can reach them
+window.showDisclaimer = function(e){e.preventDefault();const m=document.getElementById('disc-modal');m.style.display='flex'};
+window.hideDisclaimer = function(){document.getElementById('disc-modal').style.display='none'};
 
-const o=new IntersectionObserver(e=>{e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('v')})},{threshold:.02});
-document.querySelectorAll('.r').forEach(el=>o.observe(el));
-document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{const t=document.querySelector(a.getAttribute('href'));if(t){e.preventDefault();t.scrollIntoView({behavior:'smooth'})}})});
-const sp=document.getElementById('sp');
-window.addEventListener('scroll',()=>{const h=document.documentElement;sp.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight))*100+'%';},{passive:true});
+(function(){
+  document.getElementById('disc-modal').addEventListener('click',function(e){if(e.target===this)window.hideDisclaimer()});
+
+  const obs=new IntersectionObserver(e=>{e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('v')})},{threshold:.02});
+  document.querySelectorAll('.r').forEach(el=>obs.observe(el));
+  document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{const t=document.querySelector(a.getAttribute('href'));if(t){e.preventDefault();t.scrollIntoView({behavior:'smooth'})}})});
+  const sp=document.getElementById('sp');
+  window.addEventListener('scroll',()=>{const h=document.documentElement;sp.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight))*100+'%';},{passive:true});
+})();
 </script>
 
 <!-- whop checkout loader: placed after embed divs so it finds them on first scan -->
