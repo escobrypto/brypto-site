@@ -170,14 +170,15 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;background:rgba(6,6,6,.92);b
 .rules-open{max-height:3000px!important}
 
 /* checkout cards — zine style, taped to the wall */
-.checkout-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin:0 auto;max-width:880px}
+.checkout-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin:0 auto;max-width:760px}
 .checkout-card{
   background:#0c0c0c;
   border:2px solid #1a1a1a;
-  padding:28px 24px 24px;
+  padding:32px 28px 32px;
   position:relative;
   box-shadow:4px 6px 0 rgba(0,0,0,.5);
   transition:transform .12s ease, box-shadow .12s ease;
+  display:flex;flex-direction:column;
 }
 .checkout-card:hover{transform:translate(-2px,-2px);box-shadow:6px 8px 0 rgba(56,189,248,.12)}
 .checkout-card::before{
@@ -194,7 +195,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;background:rgba(6,6,6,.92);b
   display:inline-block;padding:4px 10px;
   font-family:var(--D);font-size:10px;font-weight:900;
   text-transform:uppercase;letter-spacing:.08em;
-  transform:rotate(-1deg);margin-bottom:14px;
+  transform:rotate(-1deg);margin-bottom:14px;align-self:flex-start;
 }
 .checkout-h{
   font-family:var(--D);font-size:clamp(22px,3vw,28px);font-weight:900;
@@ -203,13 +204,31 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;background:rgba(6,6,6,.92);b
 }
 .checkout-sub{
   font-family:var(--B);font-size:13px;color:#666;line-height:1.5;
-  margin-bottom:20px;max-width:340px;
+  margin-bottom:24px;flex-grow:1;
 }
-.checkout-embed{
-  background:#060606;border:1px dashed #1f1f1f;padding:4px;
-  min-height:200px;
+.checkout-btn{align-self:flex-start;border:none;cursor:pointer}
+
+/* checkout modal */
+.co-modal{
+  display:none;position:fixed;inset:0;z-index:9000;
+  background:rgba(0,0,0,.88);backdrop-filter:blur(6px);
+  align-items:flex-start;justify-content:center;
+  padding:40px 20px;overflow-y:auto;
 }
-.checkout-embed iframe{border:none!important;background:transparent!important}
+.co-modal.open{display:flex}
+.co-modal-inner{
+  background:var(--wall);max-width:560px;width:100%;
+  padding:18px 18px 24px;position:relative;
+  box-shadow:6px 8px 24px rgba(0,0,0,.6);
+  border:2px solid #1a1a1a;
+}
+.co-modal-close{
+  position:absolute;top:8px;right:14px;cursor:pointer;
+  font-family:var(--M);font-size:22px;font-weight:900;color:#888;line-height:1;
+  background:none;border:none;padding:4px 8px;z-index:2;
+}
+.co-modal-close:hover{color:var(--ice)}
+.co-modal-host{min-height:480px}
 
 /* responsive */
 @media(max-width:768px){
@@ -472,7 +491,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;background:rgba(6,6,6,.92);b
   <div class="line"></div>
   <div style="height:55px"></div>
 
-  <!-- ——— EMBEDDED CHECKOUTS ——— -->
+  <!-- ——— PLAN CARDS ——— -->
 
   <div id="join" style="padding-top:10px">
 
@@ -483,29 +502,24 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;background:rgba(6,6,6,.92);b
     <div class="poster-h r" style="font-size:clamp(28px,6vw,52px);margin-bottom:8px;text-indent:1px">
       Two ways in.
     </div>
-    <p class="util r" style="margin-bottom:36px;max-width:420px">Free Lounge gets you in the room. Analysts Room gets you the calls.</p>
+    <p class="util r" style="margin-bottom:36px;max-width:420px">Free Lounge gets you in the room. Brypto Gold gets you everything.</p>
 
-    <!-- the two checkout cards -->
     <div class="checkout-grid r">
 
       <!-- FREE LOUNGE -->
       <div class="checkout-card">
         <div class="checkout-tag" style="background:#1a1a1a;color:#888">Free</div>
         <div class="checkout-h">Free Lounge</div>
-        <p class="checkout-sub">The room. The chatter. See how it works before you commit.</p>
-        <div class="checkout-embed">
-          <div data-whop-checkout-plan-id="plan_1GoamjjEQlLWl" data-whop-checkout-theme="dark"></div>
-        </div>
+        <p class="checkout-sub">See how it works before you commit.</p>
+        <button type="button" class="btn-ice checkout-btn" onclick="openCheckout('free')">Join Free &rarr;</button>
       </div>
 
-      <!-- ANALYSTS ROOM -->
+      <!-- BRYPTO GOLD -->
       <div class="checkout-card checkout-card-featured">
         <div class="checkout-tag" style="background:var(--ice);color:#000">$10 / mo</div>
-        <div class="checkout-h">Analysts Room</div>
-        <p class="checkout-sub">Setups. Reasoning. Real time. Wins and losses both stay up.</p>
-        <div class="checkout-embed">
-          <div data-whop-checkout-plan-id="plan_wwrB5hviHBCTQ" data-whop-checkout-theme="dark"></div>
-        </div>
+        <div class="checkout-h">Brypto Gold</div>
+        <p class="checkout-sub">The full Brypto experience.</p>
+        <button type="button" class="btn-ice checkout-btn" onclick="openCheckout('gold')">Get the Calls &rarr;</button>
       </div>
 
     </div>
@@ -572,6 +586,14 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;background:rgba(6,6,6,.92);b
 
 </div><!-- end canvas -->
 
+<!-- ═══ CHECKOUT MODAL ═══ -->
+<div id="co-modal" class="co-modal" role="dialog" aria-modal="true" aria-label="Checkout">
+  <div class="co-modal-inner">
+    <button type="button" class="co-modal-close" onclick="closeCheckout()" aria-label="Close checkout">&times;</button>
+    <div class="co-modal-host" id="co-modal-host"></div>
+  </div>
+</div>
+
 <!-- ═══ DISCLAIMER POPUP ═══ -->
 <div id="disc-modal" style="display:none;position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,.85);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px">
   <div style="background:var(--paper);color:var(--ink);max-width:520px;width:100%;padding:32px 28px 28px;position:relative;box-shadow:6px 8px 24px rgba(0,0,0,.6);transform:rotate(-.5deg);max-height:90vh;overflow-y:auto">
@@ -613,8 +635,37 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;background:rgba(6,6,6,.92);b
 window.showDisclaimer = function(e){e.preventDefault();const m=document.getElementById('disc-modal');m.style.display='flex'};
 window.hideDisclaimer = function(){document.getElementById('disc-modal').style.display='none'};
 
+// checkout modal — opens an embedded Whop checkout in an overlay
+const PLANS = {
+  free: 'plan_wwrB5hviHBCTQ',  // FREE LOUNGE
+  gold: 'plan_1GoamjjEQlLWl'   // ANALYSTS ROOM
+};
+window.openCheckout = function(tier){
+  const plan = PLANS[tier]; if(!plan) return;
+  const modal = document.getElementById('co-modal');
+  const host  = document.getElementById('co-modal-host');
+  // fresh embed div each open so Whop remounts cleanly
+  host.innerHTML = '<div data-whop-checkout-plan-id="'+plan+'" data-whop-checkout-theme="dark"></div>';
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  // nudge Whop's loader to scan again (re-add the script to trigger a fresh init)
+  const old = document.getElementById('whop-loader'); if(old) old.remove();
+  const s = document.createElement('script');
+  s.id = 'whop-loader';
+  s.src = 'https://js.whop.com/static/checkout/loader.js';
+  document.body.appendChild(s);
+};
+window.closeCheckout = function(){
+  const modal = document.getElementById('co-modal');
+  modal.classList.remove('open');
+  document.getElementById('co-modal-host').innerHTML = '';
+  document.body.style.overflow = '';
+};
+
 (function(){
   document.getElementById('disc-modal').addEventListener('click',function(e){if(e.target===this)window.hideDisclaimer()});
+  document.getElementById('co-modal').addEventListener('click',function(e){if(e.target===this)window.closeCheckout()});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'){window.closeCheckout();window.hideDisclaimer();}});
 
   const obs=new IntersectionObserver(e=>{e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('v')})},{threshold:.02});
   document.querySelectorAll('.r').forEach(el=>obs.observe(el));
@@ -623,8 +674,5 @@ window.hideDisclaimer = function(){document.getElementById('disc-modal').style.d
   window.addEventListener('scroll',()=>{const h=document.documentElement;sp.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight))*100+'%';},{passive:true});
 })();
 </script>
-
-<!-- whop checkout loader: placed after embed divs so it finds them on first scan -->
-<script src="https://js.whop.com/static/checkout/loader.js"></script>
 </body>
 </html>
