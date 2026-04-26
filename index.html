@@ -602,8 +602,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;background:rgba(6,6,6,.92);b
     <div style="position:absolute;top:-5px;left:20px;width:50px;height:8px;background:rgba(56,189,248,.4);transform:rotate(-2deg)"></div>
     <div style="position:absolute;top:-4px;right:24px;width:40px;height:7px;background:rgba(56,189,248,.3);transform:rotate(3deg)"></div>
 
-    <!-- close -->
-    <div onclick="hideDisclaimer()" style="position:absolute;top:10px;right:14px;cursor:pointer;font-family:var(--M);font-size:18px;font-weight:900;color:#999;line-height:1">&times;</div>
+    <!-- close (hidden in gate mode) -->
+    <div id="disc-close" onclick="hideDisclaimer()" style="position:absolute;top:10px;right:14px;cursor:pointer;font-family:var(--M);font-size:18px;font-weight:900;color:#999;line-height:1">&times;</div>
 
     <div style="font-family:var(--S);font-size:16px;text-transform:uppercase;margin-bottom:16px">Before you enter</div>
 
@@ -614,10 +614,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;background:rgba(6,6,6,.92);b
     </div>
 
     <div style="font-family:var(--B);font-size:13px;color:#888;margin-bottom:24px">
-      By entering, you accept and agree to the <span onclick="document.querySelector('.rules-body').classList.add('rules-open');hideDisclaimer();document.querySelector('.rules-body').scrollIntoView({behavior:'smooth'})" style="color:var(--ice);cursor:pointer;text-decoration:underline">rules and disclaimer</span>.
+      By entering, you accept and agree to the <span onclick="document.querySelector('.rules-body').classList.add('rules-open');acceptDisclaimer();document.querySelector('.rules-body').scrollIntoView({behavior:'smooth'})" style="color:var(--ice);cursor:pointer;text-decoration:underline">rules and disclaimer</span>.
     </div>
 
-    <a href="#join" onclick="hideDisclaimer()" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:var(--ice);border:none;color:#000;font-family:var(--S);font-size:13px;text-transform:uppercase;text-decoration:none;transform:rotate(-1deg);box-shadow:3px 3px 0 rgba(0,0,0,.2);transition:all .08s" onmouseover="this.style.transform='translate(-3px,-3px) rotate(1deg)';this.style.boxShadow='6px 6px 0 rgba(56,189,248,.2)'" onmouseout="this.style.transform='rotate(-1deg)';this.style.boxShadow='3px 3px 0 rgba(0,0,0,.2)'">I agree. Pick a room &rarr;</a>
+    <a href="#join" onclick="acceptDisclaimer()" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:var(--ice);border:none;color:#000;font-family:var(--S);font-size:13px;text-transform:uppercase;text-decoration:none;transform:rotate(-1deg);box-shadow:3px 3px 0 rgba(0,0,0,.2);transition:all .08s" onmouseover="this.style.transform='translate(-3px,-3px) rotate(1deg)';this.style.boxShadow='6px 6px 0 rgba(56,189,248,.2)'" onmouseout="this.style.transform='rotate(-1deg)';this.style.boxShadow='3px 3px 0 rgba(0,0,0,.2)'">I agree. Step inside &rarr;</a>
 
   </div>
 </div>
@@ -632,15 +632,43 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;background:rgba(6,6,6,.92);b
 
 <script>
 // disclaimer popup — exposed on window so inline onclick handlers can reach them
-window.showDisclaimer = function(e){e.preventDefault();const m=document.getElementById('disc-modal');m.style.display='flex'};
-window.hideDisclaimer = function(){document.getElementById('disc-modal').style.display='none'};
+const DISC_KEY = 'brypto-disclaimer-accepted-v1';
+let pendingTier = null; // remembers which checkout to open after acceptance
+
+window.showDisclaimer = function(e){if(e)e.preventDefault();const m=document.getElementById('disc-modal');document.getElementById('disc-close').style.display='';m.dataset.gate='0';m.style.display='flex'};
+window.hideDisclaimer = function(){const m=document.getElementById('disc-modal');if(m.dataset.gate==='1')return;m.style.display='none'};
+window.acceptDisclaimer = function(){
+  try{localStorage.setItem(DISC_KEY,'1')}catch(e){}
+  const m=document.getElementById('disc-modal');
+  m.dataset.gate='0';
+  m.style.display='none';
+  // if a checkout was waiting on acceptance, open it now
+  if(pendingTier){const t=pendingTier;pendingTier=null;_openCheckoutNow(t)}
+};
 
 // checkout modal — opens an embedded Whop checkout in an overlay
 const PLANS = {
   free: 'plan_wwrB5hviHBCTQ',  // FREE LOUNGE
-  gold: 'plan_1GoamjjEQlLWl'   // ANALYSTS ROOM
+  gold: 'plan_1GoamjjEQlLWl'   // BRYPTO GOLD
 };
+
+// public entrypoint: gates on disclaimer acceptance first
 window.openCheckout = function(tier){
+  if(!PLANS[tier]) return;
+  let accepted=false;
+  try{accepted=localStorage.getItem(DISC_KEY)==='1'}catch(e){}
+  if(!accepted){
+    pendingTier = tier;
+    const m=document.getElementById('disc-modal');
+    m.dataset.gate='1';
+    document.getElementById('disc-close').style.display='none';
+    m.style.display='flex';
+    return;
+  }
+  _openCheckoutNow(tier);
+};
+
+function _openCheckoutNow(tier){
   const plan = PLANS[tier]; if(!plan) return;
   const modal = document.getElementById('co-modal');
   const host  = document.getElementById('co-modal-host');
@@ -654,7 +682,8 @@ window.openCheckout = function(tier){
   s.id = 'whop-loader';
   s.src = 'https://js.whop.com/static/checkout/loader.js';
   document.body.appendChild(s);
-};
+}
+
 window.closeCheckout = function(){
   const modal = document.getElementById('co-modal');
   modal.classList.remove('open');
