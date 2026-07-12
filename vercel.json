@@ -1,7 +1,7 @@
 {
   "rewrites": [
     { "source": "/referrals", "destination": "/referrals.html" },
-    { "source": "/ref/:code", "destination": "http://104.248.11.197:8420/ref/:code" },
-    { "source": "/api/referrals/:path*", "destination": "http://104.248.11.197:8420/api/referrals/:path*" }
+    { "source": "/ref/:code", "destination": "http://104.248.11.187:8420/ref/:code" },
+    { "source": "/api/referrals/:path*", "destination": "http://104.248.11.187:8420/api/referrals/:path*" }
   ]
 }
