@@ -785,6 +785,16 @@ window.closeCheckout = function(){
   //   {follow:'Bryptotraders'}                            -> follow card (always works)
   // NOTE: full-timeline embeds are dead for logged-out users — X killed them. Use single posts.
   const SHOTS = [
+    {tweet:'https://x.com/Bryptotraders/status/2091306141611655487'},
+    {tweet:'https://x.com/Bryptotraders/status/2091008059275682116'},
+    {tweet:'https://x.com/Bryptotraders/status/2087915328462524640'},
+    {tweet:'https://x.com/Bryptotraders/status/2087565563837170091'},
+    {tweet:'https://x.com/Bryptotraders/status/2086918383296299333'},
+    {tweet:'https://x.com/Bryptotraders/status/2086151282537250848'},
+    {tweet:'https://x.com/Bryptotraders/status/2084675692818763795'},
+    {tweet:'https://x.com/Bryptotraders/status/2082856409260261629'},
+    {tweet:'https://x.com/Bryptotraders/status/2077421065085849804'},
+    {tweet:'https://x.com/Bryptotraders/status/2076732764150469050'},
     {follow:'Bryptotraders'}
   ];
   const followCard = h =>
@@ -807,8 +817,10 @@ window.closeCheckout = function(){
       }else if(s.tweet){
         if(s.tweet.includes('PASTE_ID')){return}
         hasTweets=true;
+        const u=s.tweet.replace(/x\.com/,'twitter.com').split('?')[0];
         f.innerHTML='<div class="tw-wrap"><blockquote class="twitter-tweet" data-theme="dark" data-dnt="true" data-conversation="none">'
-          +'<a href="'+s.tweet.replace(/x\.com/,'twitter.com')+'"></a></blockquote></div>'
+          +'<p style="font-family:var(--M);font-size:11px;color:#3a3a3a;letter-spacing:.08em">LOADING POST&hellip;</p>'
+          +'<a href="'+u+'">view on X &rarr;</a></blockquote></div>'
           +'<figcaption class="shot-cap"><b>'+n+'</b><span>@Bryptotraders</span></figcaption>';
       }else{
         f.innerHTML='<img loading="lazy" alt="Brypto server screenshot — '+(s.cap||'')+'">'
@@ -841,12 +853,19 @@ window.closeCheckout = function(){
       }})},{rootMargin:'400px'});
       tw.observe(strip);
     }
-    // drag to scroll (frames + gaps; embeds themselves stay clickable)
+    // drag to scroll — capture only AFTER movement so clicks (follow btn, links) still work
     let down=false,startX=0,startL=0,moved=false;
-    strip.addEventListener('pointerdown',e=>{down=true;moved=false;startX=e.clientX;startL=strip.scrollLeft;strip.setPointerCapture(e.pointerId)});
-    strip.addEventListener('pointermove',e=>{if(!down)return;const d=e.clientX-startX;if(Math.abs(d)>4){moved=true;strip.classList.add('dragging')}strip.scrollLeft=startL-d});
+    strip.addEventListener('pointerdown',e=>{down=true;moved=false;startX=e.clientX;startL=strip.scrollLeft});
+    strip.addEventListener('pointermove',e=>{
+      if(!down)return;
+      const d=e.clientX-startX;
+      if(!moved&&Math.abs(d)>6){moved=true;strip.classList.add('dragging');try{strip.setPointerCapture(e.pointerId)}catch(_){}}
+      if(moved)strip.scrollLeft=startL-d;
+    });
     const up=()=>{down=false;strip.classList.remove('dragging')};
     strip.addEventListener('pointerup',up);strip.addEventListener('pointercancel',up);
+    // swallow the click only if it was a drag
+    strip.addEventListener('click',e=>{if(moved){e.preventDefault();e.stopPropagation();moved=false}},true);
     // arrows
     const step=()=>{const s0=strip.querySelector('.shot');return s0?s0.getBoundingClientRect().width+34:400};
     document.getElementById('shots-prev').onclick=()=>strip.scrollBy({left:-step(),behavior:'smooth'});
