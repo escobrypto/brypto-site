@@ -169,6 +169,66 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;background:rgba(6,6,6,.92);b
 /* rules expand */
 .rules-open{max-height:3000px!important}
 
+/* ═══ EVIDENCE STRIP — screenshots taped to the wall ═══ */
+.shots{position:relative;margin:0 -32px}
+.shots-strip{
+  display:flex;gap:34px;align-items:flex-start;
+  overflow-x:auto;overscroll-behavior-x:contain;
+  scroll-snap-type:x mandatory;
+  padding:26px 32px 34px;
+  cursor:grab;
+  scrollbar-width:none;-ms-overflow-style:none;
+}
+.shots-strip::-webkit-scrollbar{display:none}
+.shots-strip.dragging{cursor:grabbing;scroll-snap-type:none}
+.shot{
+  flex:0 0 auto;width:min(560px,82vw);
+  scroll-snap-align:center;
+  position:relative;
+  background:#0c0c0c;border:2px solid #1a1a1a;
+  padding:10px 10px 0;
+  box-shadow:5px 7px 0 rgba(0,0,0,.5);
+}
+.shot:nth-child(odd){transform:rotate(-.7deg)}
+.shot:nth-child(even){transform:rotate(.6deg)}
+/* tape */
+.shot::before{content:'';position:absolute;top:-7px;left:22px;width:56px;height:9px;background:rgba(56,189,248,.32);transform:rotate(-2deg);z-index:2}
+.shot::after{content:'';position:absolute;top:-6px;right:26px;width:42px;height:8px;background:rgba(56,189,248,.22);transform:rotate(3deg);z-index:2}
+.shot img{
+  display:block;width:100%;height:auto;
+  filter:saturate(.92) contrast(1.05);
+  border:1px solid #141414;
+  user-select:none;-webkit-user-drag:none;pointer-events:none;
+}
+/* live X post inside the frame */
+.shot{width:min(500px,82vw)}
+.shot-feed{width:min(560px,88vw)}
+.shots-strip.single{justify-content:center;cursor:default}
+.tw-wrap{min-height:220px;overflow:hidden}
+.tw-wrap .twitter-tweet{margin:0!important}
+.tw-wrap iframe{max-width:100%!important}
+.tw-wrap a{font-family:var(--M);font-size:11px;color:#333;word-break:break-all}
+.shot-cap{
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  padding:9px 4px 10px;
+  font-family:var(--M);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#3a3a3a;
+}
+.shot-cap b{font-weight:900;color:#555}
+.shots-nav{
+  display:flex;gap:14px;align-items:center;
+  padding:0 32px;
+}
+.shots-btn{
+  background:none;border:none;cursor:pointer;padding:4px 8px;
+  font-family:var(--M);font-size:13px;font-weight:900;letter-spacing:.05em;color:#3a3a3a;
+}
+.shots-btn:hover{color:var(--ice)}
+@media(max-width:768px){
+  .shots{margin:0 -20px}
+  .shots-strip{padding:26px 20px 30px;gap:22px}
+  .shots-nav{padding:0 20px}
+}
+
 /* checkout cards — zine style, taped to the wall */
 .checkout-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin:0 auto;max-width:760px}
 .checkout-card{
@@ -409,6 +469,23 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;background:rgba(6,6,6,.92);b
   <div style="padding-left:100px" class="r">
     <div style="font-family:var(--S);font-size:13px;text-transform:uppercase;color:var(--ice);margin-bottom:6px">Built from the inside</div>
     <p class="util" style="max-width:280px">Bots. Alerts. Tracking.<br>Made by someone who needed it to exist.</p>
+  </div>
+
+  <div style="height:44px"></div>
+
+  <!-- ——— EVIDENCE — screenshots taped to the wall ——— -->
+  <div class="r">
+    <div class="sticker" style="transform:rotate(1deg)">Evidence</div>
+    <span style="font-family:var(--SC);font-size:13px;color:#333;margin-left:16px;display:inline-block;transform:rotate(-1deg)">receipts. live from the feed straight from the server &rarr;rarr;</span>
+  </div>
+
+  <div class="shots r">
+    <div class="shots-strip" id="shots-strip" aria-label="Server screenshots"><!-- populated by JS --></div>
+  </div>
+  <div class="shots-nav r">
+    <button class="shots-btn" id="shots-prev" aria-label="Previous screenshot">[&larr;]</button>
+    <button class="shots-btn" id="shots-next" aria-label="Next screenshot">[&rarr;]</button>
+    <span class="util" style="font-size:10px;color:#2a2a2a;letter-spacing:.12em">DRAG / SCROLL</span>
   </div>
 
   <div style="height:24px"></div>
@@ -695,6 +772,67 @@ window.closeCheckout = function(){
   document.getElementById('disc-modal').addEventListener('click',function(e){if(e.target===this)window.hideDisclaimer()});
   document.getElementById('co-modal').addEventListener('click',function(e){if(e.target===this)window.closeCheckout()});
   document.addEventListener('keydown',function(e){if(e.key==='Escape'){window.closeCheckout();window.hideDisclaimer();}});
+
+  // ═══ EVIDENCE STRIP ═══
+  // Entry types, mix freely, order = display order:
+  //   {timeline:'Bryptotraders'}                          -> live X feed (auto-updates)
+  //   {tweet:'https://x.com/Bryptotraders/status/...'}    -> one pinned post
+  //   {src:'/screens/01.png', cap:'#free-calls'}          -> screenshot
+  const SHOTS = [
+    {timeline:'Bryptotraders'}
+  ];
+  const strip=document.getElementById('shots-strip');
+  if(strip){
+    let hasTweets=false;
+    SHOTS.forEach((s,i)=>{
+      const f=document.createElement('figure');
+      f.className='shot';
+      const n='EXHIBIT '+String(i+1).padStart(2,'0');
+      if(s.timeline){
+        hasTweets=true;
+        f.classList.add('shot-feed');
+        f.innerHTML='<div class="tw-wrap"><a class="twitter-timeline" data-theme="dark" data-dnt="true" data-height="540" data-chrome="noheader nofooter noborders transparent" href="https://twitter.com/'+s.timeline+'">@'+s.timeline+' on X</a></div>'
+          +'<figcaption class="shot-cap"><b>LIVE FEED</b><span>@'+s.timeline+'</span></figcaption>';
+      }else if(s.tweet){
+        if(s.tweet.includes('PASTE_ID')){return}
+        hasTweets=true;
+        f.innerHTML='<div class="tw-wrap"><blockquote class="twitter-tweet" data-theme="dark" data-dnt="true" data-conversation="none">'
+          +'<a href="'+s.tweet.replace(/x\.com/,'twitter.com')+'"></a></blockquote></div>'
+          +'<figcaption class="shot-cap"><b>'+n+'</b><span>@Bryptotraders</span></figcaption>';
+      }else{
+        f.innerHTML='<img loading="lazy" alt="Brypto server screenshot — '+(s.cap||'')+'">'
+          +'<figcaption class="shot-cap"><b>'+n+'</b><span>'+(s.cap||'')+'</span></figcaption>';
+        const img=f.querySelector('img');
+        img.onerror=()=>f.remove();
+        img.src=s.src;
+      }
+      strip.appendChild(f);
+    });
+    // single frame: center it, hide arrows
+    if(strip.children.length<2){
+      strip.classList.add('single');
+      const nav=document.querySelector('.shots-nav');if(nav)nav.style.display='none';
+    }
+    // hide the whole section if nothing to show
+    setTimeout(()=>{if(!strip.children.length){document.querySelectorAll('.shots,.shots-nav').forEach(el=>el.style.display='none')}},4000);
+    // lazy-load X widgets only when the strip scrolls into view
+    if(hasTweets){
+      const tw=new IntersectionObserver((es,o)=>{es.forEach(x=>{if(x.isIntersecting){
+        const sc=document.createElement('script');sc.src='https://platform.twitter.com/widgets.js';sc.async=true;document.body.appendChild(sc);o.disconnect();
+      }})},{rootMargin:'400px'});
+      tw.observe(strip);
+    }
+    // drag to scroll (frames + gaps; embeds themselves stay clickable)
+    let down=false,startX=0,startL=0,moved=false;
+    strip.addEventListener('pointerdown',e=>{down=true;moved=false;startX=e.clientX;startL=strip.scrollLeft;strip.setPointerCapture(e.pointerId)});
+    strip.addEventListener('pointermove',e=>{if(!down)return;const d=e.clientX-startX;if(Math.abs(d)>4){moved=true;strip.classList.add('dragging')}strip.scrollLeft=startL-d});
+    const up=()=>{down=false;strip.classList.remove('dragging')};
+    strip.addEventListener('pointerup',up);strip.addEventListener('pointercancel',up);
+    // arrows
+    const step=()=>{const s0=strip.querySelector('.shot');return s0?s0.getBoundingClientRect().width+34:400};
+    document.getElementById('shots-prev').onclick=()=>strip.scrollBy({left:-step(),behavior:'smooth'});
+    document.getElementById('shots-next').onclick=()=>strip.scrollBy({left:step(),behavior:'smooth'});
+  }
 
   const obs=new IntersectionObserver(e=>{e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('v')})},{threshold:.02});
   document.querySelectorAll('.r').forEach(el=>obs.observe(el));
