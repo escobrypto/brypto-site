@@ -208,6 +208,11 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;background:rgba(6,6,6,.92);b
 .tw-wrap .twitter-tweet{margin:0!important}
 .tw-wrap iframe{max-width:100%!important}
 .tw-wrap a{font-family:var(--M);font-size:11px;color:#333;word-break:break-all}
+/* follow card — fallback + default when no post URLs are pinned */
+.fc{padding:44px 28px 40px;text-align:center;border:1px solid #141414;background:
+  radial-gradient(ellipse at 50% 0%,rgba(56,189,248,.05),transparent 60%)}
+.fc-h{font-family:var(--D);font-weight:900;font-size:clamp(20px,3.4vw,30px);letter-spacing:-.02em;color:#e8e8e8;text-shadow:2px 2px 0 rgba(0,0,0,.3)}
+.fc-sub{font-family:var(--M);font-size:12px;color:#4a4a4a;line-height:1.8;margin-top:12px}
 .shot-cap{
   display:flex;justify-content:space-between;align-items:baseline;gap:10px;
   padding:9px 4px 10px;
@@ -476,7 +481,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;background:rgba(6,6,6,.92);b
   <!-- ——— EVIDENCE — screenshots taped to the wall ——— -->
   <div class="r">
     <div class="sticker" style="transform:rotate(1deg)">Evidence</div>
-    <span style="font-family:var(--SC);font-size:13px;color:#333;margin-left:16px;display:inline-block;transform:rotate(-1deg)">receipts. live from the feed straight from the server &rarr;rarr;</span>
+    <span style="font-family:var(--SC);font-size:13px;color:#333;margin-left:16px;display:inline-block;transform:rotate(-1deg)">receipts, straight from the feed &rarr;</span>
   </div>
 
   <div class="shots r">
@@ -775,12 +780,19 @@ window.closeCheckout = function(){
 
   // ═══ EVIDENCE STRIP ═══
   // Entry types, mix freely, order = display order:
-  //   {timeline:'Bryptotraders'}                          -> live X feed (auto-updates)
-  //   {tweet:'https://x.com/Bryptotraders/status/...'}    -> one pinned post
+  //   {tweet:'https://x.com/Bryptotraders/status/...'}    -> one live X post (these render)
   //   {src:'/screens/01.png', cap:'#free-calls'}          -> screenshot
+  //   {follow:'Bryptotraders'}                            -> follow card (always works)
+  // NOTE: full-timeline embeds are dead for logged-out users — X killed them. Use single posts.
   const SHOTS = [
-    {timeline:'Bryptotraders'}
+    {follow:'Bryptotraders'}
   ];
+  const followCard = h =>
+    '<div class="fc">'
+    +'<div class="fc-h">@'+h.toUpperCase()+'</div>'
+    +'<div class="fc-sub">calls, receipts, and the occasional victory lap.<br>posted in public. no edits.</div>'
+    +'<a class="btn-ice" style="margin-top:18px" href="https://x.com/'+h+'" target="_blank" rel="noopener">Follow on X &rarr;</a>'
+    +'</div>';
   const strip=document.getElementById('shots-strip');
   if(strip){
     let hasTweets=false;
@@ -788,11 +800,10 @@ window.closeCheckout = function(){
       const f=document.createElement('figure');
       f.className='shot';
       const n='EXHIBIT '+String(i+1).padStart(2,'0');
-      if(s.timeline){
-        hasTweets=true;
+      if(s.follow){
         f.classList.add('shot-feed');
-        f.innerHTML='<div class="tw-wrap"><a class="twitter-timeline" data-theme="dark" data-dnt="true" data-height="540" data-chrome="noheader nofooter noborders transparent" href="https://twitter.com/'+s.timeline+'">@'+s.timeline+' on X</a></div>'
-          +'<figcaption class="shot-cap"><b>LIVE FEED</b><span>@'+s.timeline+'</span></figcaption>';
+        f.innerHTML=followCard(s.follow)
+          +'<figcaption class="shot-cap"><b>LIVE FEED</b><span>@'+s.follow+'</span></figcaption>';
       }else if(s.tweet){
         if(s.tweet.includes('PASTE_ID')){return}
         hasTweets=true;
@@ -819,6 +830,14 @@ window.closeCheckout = function(){
     if(hasTweets){
       const tw=new IntersectionObserver((es,o)=>{es.forEach(x=>{if(x.isIntersecting){
         const sc=document.createElement('script');sc.src='https://platform.twitter.com/widgets.js';sc.async=true;document.body.appendChild(sc);o.disconnect();
+        // watchdog: any embed that never hydrates becomes a follow card instead of a dead box
+        setTimeout(()=>{document.querySelectorAll('.tw-wrap').forEach(w=>{
+          if(!w.querySelector('iframe')){
+            const f=w.closest('.shot');
+            f.classList.add('shot-feed');
+            w.outerHTML=followCard('Bryptotraders');
+          }
+        })},8000);
       }})},{rootMargin:'400px'});
       tw.observe(strip);
     }
