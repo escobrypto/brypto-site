@@ -728,10 +728,10 @@ window.acceptDisclaimer = function(){
   if(pendingTier){const t=pendingTier;pendingTier=null;_openCheckoutNow(t)}
 };
 
-// checkout modal — opens an embedded Whop checkout in an overlay
+// checkout — opens the Whop product page directly (canonical URLs, can't go stale)
 const PLANS = {
-  free: 'plan_wwrB5hviHBCTQ',  // FREE LOUNGE
-  gold: 'plan_1GoamjjEQlLWl'   // BRYPTO GOLD
+  free: 'https://whop.com/brypto-real-traders/basic-e9/',  // FREE LOUNGE
+  gold: 'https://whop.com/brypto-real-traders/gold-e8/'    // BRYPTO GOLD
 };
 
 // public entrypoint: gates on disclaimer acceptance first
@@ -751,19 +751,9 @@ window.openCheckout = function(tier){
 };
 
 function _openCheckoutNow(tier){
-  const plan = PLANS[tier]; if(!plan) return;
-  const modal = document.getElementById('co-modal');
-  const host  = document.getElementById('co-modal-host');
-  // fresh embed div each open so Whop remounts cleanly
-  host.innerHTML = '<div data-whop-checkout-plan-id="'+plan+'" data-whop-checkout-theme="dark"></div>';
-  modal.classList.add('open');
-  document.body.style.overflow = 'hidden';
-  // nudge Whop's loader to scan again (re-add the script to trigger a fresh init)
-  const old = document.getElementById('whop-loader'); if(old) old.remove();
-  const s = document.createElement('script');
-  s.id = 'whop-loader';
-  s.src = 'https://js.whop.com/static/checkout/loader.js';
-  document.body.appendChild(s);
+  const url = PLANS[tier]; if(!url) return;
+  const w = window.open(url,'_blank','noopener');
+  if(!w) window.location.href = url; // popup blocked (e.g. after disclaimer accept) -> same tab
 }
 
 window.closeCheckout = function(){
